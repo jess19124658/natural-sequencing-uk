@@ -57,12 +57,13 @@ if show_mast and mast_df is not None:
             marker_cluster=True
         )
 
-        # Add optional heatmap
+        # Add optional heatmap using just lat/lon
         m.add_heatmap(
             data=mast_df,
             latitude="lat",
             longitude="lon",
-            layer_name="Mast Tree Density"
+            layer_name="Mast Tree Density",
+            value=None
         )
         any_layers_loaded = True
 
