@@ -3,91 +3,101 @@ import pandas as pd
 import leafmap.foliumap as leafmap
 import folium.plugins as plugins
 
-# Page setup
-:contentReference[oaicite:1]{index=1}
-:contentReference[oaicite:2]{index=2}
-:contentReference[oaicite:3]{index=3}
+st.set_page_config(layout="wide")
+st.title("UK Rewilding Dashboard: Wind, Water & Mast Year Planning")
 
-# Sidebar controls
-:contentReference[oaicite:4]{index=4}
-:contentReference[oaicite:5]{index=5}
-:contentReference[oaicite:6]{index=6}
-:contentReference[oaicite:7]{index=7}
-:contentReference[oaicite:8]{index=8}
+st.success("✔️ Imports successful")
 
-# Initialize map
-:contentReference[oaicite:9]{index=9}
-:contentReference[oaicite:10]{index=10}
+# Sidebar layer toggles
+st.sidebar.header("Layer Controls")
+show_wind = st.sidebar.checkbox("Show Wind Corridors", True)
+show_water = st.sidebar.checkbox("Show Hydrology", True)
+show_mast = st.sidebar.checkbox("Show Mast Tree Zones", True)
+show_soil = st.sidebar.checkbox("Show Soilscapes", True)
+
+# Map setup
+st.subheader("UK Rewilding Map")
+m = leafmap.Map(center=[54.5, -3], zoom=6)
+
 any_layers_loaded = False
 
-# Wind layer
+# Wind Corridors Layer
 if show_wind:
     try:
-        :contentReference[oaicite:11]{index=11}
+        m.add_geojson("data/uk_wind_corridors.geojson", layer_name="Wind Corridors")
         any_layers_loaded = True
-    :contentReference[oaicite:12]{index=12}
-        :contentReference[oaicite:13]{index=13}
+    except Exception as e:
+        st.warning(f"⚠️ Could not load wind corridors: {e}")
 
-# River layer
+# River Systems Layer
 if show_water:
     try:
-        m.add_geojson(
-            :contentReference[oaicite:14]{index=14}
-            :contentReference[oaicite:15]{index=15}
-        )
+        m.add_geojson("data/uk_rivers.geojson", layer_name="River Systems")
         any_layers_loaded = True
-    :contentReference[oaicite:16]{index=16}
-        :contentReference[oaicite:17]{index=17}
+    except Exception as e:
+        st.warning(f"⚠️ Could not load river data: {e}")
 
-# Soilscapes WMS layer (England & Wales)
-if show_soil:
-    try:
-        m.add_wms(
-            :contentReference[oaicite:18]{index=18}
-            layer="0",
-            :contentReference[oaicite:19]{index=19}
-        )
-        any_layers_loaded = True
-    :contentReference[oaicite:20]{index=20}
-        :contentReference[oaicite:21]{index=21}
-
-# Mast trees upload & display
-:contentReference[oaicite:22]{index=22}
+# File uploader for community CSVs
+uploaded_file = st.sidebar.file_uploader("Upload Mast Tree CSV", type=["csv"])
 mast_df = None
-if uploaded_file:
-    :contentReference[oaicite:23]{index=23}
-    :contentReference[oaicite:24]{index=24}
+
+if uploaded_file is not None:
+    mast_df = pd.read_csv(uploaded_file)
+    st.success("✅ Custom mast tree data uploaded!")
 else:
     try:
-        :contentReference[oaicite:25]{index=25}
-    except:
-        :contentReference[oaicite:26]{index=26}
+        mast_df = pd.read_csv("data/uk_mast_trees.csv")
+    except Exception as e:
+        st.warning(f"⚠️ Could not load default mast trees: {e}")
 
-:contentReference[oaicite:27]{index=27}
+# Mast Tree Data + Clustering + Heatmap
+if show_mast and mast_df is not None:
     try:
         m.add_points_from_xy(
-            :contentReference[oaicite:28]{index=28}
-            :contentReference[oaicite:29]{index=29}
+            mast_df,
+            x="lon", y="lat",
+            layer_name="Mast Tree Zones",
+            info_columns=[col for col in mast_df.columns if col not in ["lon", "lat"]],
+            marker_cluster=True
         )
         m.add_heatmap(
             data=mast_df,
             latitude="lat",
             longitude="lon",
-            :contentReference[oaicite:30]{index=30}
+            layer_name="Mast Tree Density"
         )
         any_layers_loaded = True
-    :contentReference[oaicite:31]{index=31}
-        :contentReference[oaicite:32]{index=32}
+    except Exception as e:
+        st.warning(f"⚠️ Error showing mast data: {e}")
+
+# Soilscapes WMS tile layer
+if show_soil:
+    try:
+        m.add_wms_layer(
+            url="https://ogc.bgs.ac.uk/cgi-bin/BGS_Bedrock_and_Superficial_Geology/wms",
+            layers="Soilscapes",
+            name="Soilscapes (Soil Types)",
+            format="image/png",
+            transparent=True,
+            attribution="© Cranfield University/NERC"
+        )
+        any_layers_loaded = True
+    except Exception as e:
+        st.warning(f"⚠️ Could not load Soilscapes WMS layer: {e}")
 
 # Basemap and legend
-:contentReference[oaicite:33]{index=33}
-if any_layers_loaded:
-    :contentReference[oaicite:34]{index=34}
-        :contentReference[oaicite:35]{index=35}
-        :contentReference[oaicite:36]{index=36}
-        :contentReference[oaicite:37]{index=37}
-        :contentReference[oaicite:38]{index=38}
-    })
+m.add_basemap("CartoDB.DarkMatter")
 
-# Render
-:contentReference[oaicite:39]{index=39}
+if any_layers_loaded:
+    m.add_legend(
+        title="UK Rewilding Layers",
+        labels={
+            "Wind Corridors": "red",
+            "River Systems": "blue",
+            "Mast Tree Zones": "green",
+            "Soilscapes (Soil Types)": "brown"
+        }
+    )
+
+# Render map
+m.to_streamlit(height=700)
