@@ -5,9 +5,9 @@ import leafmap.foliumap as leafmap
 st.set_page_config(layout="wide")
 st.title("UK Rewilding Dashboard: Wind, Water & Mast Year Planning")
 
-try:
-    st.success("✔️ Imports successful")
+st.success("✔️ Imports successful")
 
+try:
     # Sidebar layer toggles
     st.sidebar.header("Layer Controls")
     show_wind = st.sidebar.checkbox("Show Wind Corridors", True)
