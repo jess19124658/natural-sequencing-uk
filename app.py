@@ -4,7 +4,6 @@ import leafmap.foliumap as leafmap
 
 st.set_page_config(layout="wide")
 st.title("UK Rewilding Dashboard: Wind, Water & Mast Year Planning")
-
 st.success("✔️ Imports successful")
 
 # Sidebar layer toggles
@@ -33,7 +32,11 @@ if show_water:
         st.warning(f"⚠️ Could not load river data: {e}")
 
 # File uploader for custom mast tree data
-uploaded_file = st.sidebar.file_uploader("Upload Mast Tree CSV", type=["csv"])
+st.sidebar.markdown("---")
+uploaded_file = st.sidebar.file_uploader("📤 Upload Mast Tree CSV", type=["csv"])
+st.sidebar.markdown("*CSV must include `lat` and `lon` columns.*")
+st.sidebar.markdown("Optional: `value` column for heatmap intensity.")
+
 mast_df = None
 
 if uploaded_file is not None:
@@ -48,17 +51,19 @@ else:
 # Display mast data
 if show_mast and mast_df is not None:
     try:
+        # Clustered markers
         m.add_points_from_xy(
             mast_df,
             x="lon", y="lat",
             layer_name="Mast Tree Zones",
-            info_columns=[col for col in mast_df.columns if col not in ["lon", "lat"]],
+            info_columns=[col for col in mast_df.columns if col not in ["lat", "lon", "value"]],
             marker_cluster=True
         )
 
-        if "value" in mast_df.columns:
+        # Check if value column exists and is numeric
+        if "value" in mast_df.columns and pd.api.types.is_numeric_dtype(mast_df["value"]):
             m.add_heatmap(
-                data=mast_df,
+                data=mast_df.dropna(subset=["lat", "lon", "value"]),
                 latitude="lat",
                 longitude="lon",
                 value="value",
@@ -66,7 +71,7 @@ if show_mast and mast_df is not None:
             )
         else:
             m.add_heatmap(
-                data=mast_df,
+                data=mast_df.dropna(subset=["lat", "lon"]),
                 latitude="lat",
                 longitude="lon",
                 layer_name="Mast Tree Density"
@@ -77,7 +82,7 @@ if show_mast and mast_df is not None:
     except Exception as e:
         st.warning(f"⚠️ Error showing mast data: {e}")
 
-# Soilscapes WMS
+# Soilscapes WMS (England only)
 try:
     m.add_wms_layer(
         url="https://ags2.craig.fr/arcgis/services/Soilscapes/MapServer/WMSServer?",
