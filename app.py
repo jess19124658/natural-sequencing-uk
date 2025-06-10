@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
 
@@ -13,7 +14,7 @@ try:
 except Exception as e:
     st.error(f"🚨 Something went wrong: {e}")
 
-=======
+
 # Placeholder for Streamlit dashboard (app.py)
 # Sidebar layer toggles
 st.sidebar.header("Layer Controls")
@@ -48,7 +49,6 @@ import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
 
->>>>>>> 6c6958e662b9a89f1058c631407684e8760fb022
 st.set_page_config(layout="wide")
 st.title("UK Rewilding Dashboard: Wind, Water & Mast Year Planning")
 
@@ -62,7 +62,7 @@ try:
 
 except Exception as e:
     st.error(f"🚨 Something went wrong: {e}")# Placeholder for Streamlit dashboard (app.py)
-=======
+
     st.success("✔️ Imports successful")
 
     # Sidebar controls
