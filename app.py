@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
+import folium
 import folium.plugins as plugins
 
 st.set_page_config(layout="wide")
@@ -24,8 +25,13 @@ legend_labels = {}
 # Wind Corridors
 if show_wind:
     try:
-        m.add_geojson("data/uk_wind_corridors.geojson", layer_name="Wind Corridors")
-        legend_labels["Wind Corridor"] = "red"
+        wind_data = leafmap.load_geojson("data/uk_wind_corridors.geojson")
+        wind_layer = folium.FeatureGroup(name="Wind Corridors")
+        for feature in wind_data["features"]:
+            coords = feature["geometry"]["coordinates"]
+            folium.PolyLine(coords, color="red", weight=2, tooltip="Wind Path").add_to(wind_layer)
+        m.add_layer(wind_layer)
+        legend_labels["Wind Corridor"] = "🌀"
         any_layers_loaded = True
     except Exception as e:
         st.warning(f"⚠️ Could not load wind corridors: {e}")
@@ -33,8 +39,13 @@ if show_wind:
 # River Systems
 if show_water:
     try:
-        m.add_geojson("data/uk_rivers.geojson", layer_name="River Systems")
-        legend_labels["River Systems"] = "blue"
+        river_data = leafmap.load_geojson("data/uk_rivers.geojson")
+        river_layer = folium.FeatureGroup(name="River Systems")
+        for feature in river_data["features"]:
+            coords = feature["geometry"]["coordinates"]
+            folium.PolyLine(coords, color="blue", weight=2, tooltip="River Flow").add_to(river_layer)
+        m.add_layer(river_layer)
+        legend_labels["River Systems"] = "💧"
         any_layers_loaded = True
     except Exception as e:
         st.warning(f"⚠️ Could not load river data: {e}")
@@ -55,7 +66,7 @@ else:
 if show_mast and mast_df is not None:
     try:
         if "value" not in mast_df.columns:
-            mast_df["value"] = 1  # default for heatmap if missing
+            mast_df["value"] = 1  # default value for heatmap
 
         m.add_points_from_xy(
             mast_df,
@@ -71,7 +82,7 @@ if show_mast and mast_df is not None:
             value="value",
             layer_name="Mast Tree Density"
         )
-        legend_labels["Mast Tree Zones"] = "green"
+        legend_labels["Mast Tree Zones"] = "🌳"
         any_layers_loaded = True
 
     except Exception as e:
@@ -84,12 +95,12 @@ if show_forest:
             "data/nfi_woodland_gb_2023.geojson",
             layer_name="NFI Woodland (GB 2023)"
         )
-        legend_labels["NFI Woodland (GB)"] = "darkgreen"
+        legend_labels["NFI Woodland (GB)"] = "🌲"
         any_layers_loaded = True
     except Exception as e:
         st.warning(f"⚠️ Could not load NFI Woodland (GB): {e}")
 
-# Basemap and legend
+# Basemap and Legend
 m.add_basemap("CartoDB.DarkMatter")
 
 if any_layers_loaded:
